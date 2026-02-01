@@ -1,0 +1,105 @@
+# PRODUCTION-SCANNER Test Dependencies
+# Reference: SUIT_AI_Master_Operations_Manual_v6_8.md Section 13 - Testing Infrastructure
+
+# =============================================================================
+# CORE TESTING FRAMEWORK
+# =============================================================================
+pytest>=8.0.0
+pytest-asyncio>=0.23.0
+pytest-cov>=4.1.0
+pytest-xdist>=3.5.0          # Parallel test execution
+pytest-timeout>=2.2.0        # Test timeouts
+pytest-rerunfailures>=13.0   # Retry flaky tests
+pytest-html>=4.1.0           # HTML test reports
+
+# =============================================================================
+# HTTP TESTING
+# =============================================================================
+httpx>=0.26.0                # Async HTTP client for testing
+responses>=0.24.0            # Mock HTTP responses
+aioresponses>=0.7.0          # Mock async HTTP responses
+pytest-httpx>=0.29.0         # pytest integration for httpx
+
+# =============================================================================
+# DATABASE TESTING
+# =============================================================================
+pytest-postgresql>=5.1.0     # PostgreSQL test fixtures
+pytest-redis>=3.0.0          # Redis test fixtures
+SQLAlchemy-Utils>=0.41.0     # Database utilities
+alembic>=1.13.0              # Migration testing
+
+# =============================================================================
+# MOCKING
+# =============================================================================
+pytest-mock>=3.12.0          # Mocker fixture
+factory-boy>=3.3.0           # Test data factories
+faker>=22.0.0                # Fake data generation
+freezegun>=1.4.0             # Time mocking
+python-mock>=0.1.0           # Additional mocking utilities
+
+# =============================================================================
+# PERFORMANCE TESTING
+# =============================================================================
+locust>=2.20.0               # Load testing framework
+pytest-benchmark>=4.0.0      # Performance benchmarks
+py-spy>=0.3.0                # Performance profiling
+memory-profiler>=0.61.0      # Memory profiling
+
+# =============================================================================
+# SECURITY TESTING
+# =============================================================================
+pytest-selenium>=4.1.0       # Browser automation for E2E
+cryptography>=42.0.0         # Cryptographic testing
+pyjwt>=2.8.0                 # JWT token testing
+python-jose[cryptography]>=3.3.0  # JWT encoding/decoding
+
+# =============================================================================
+# CODE QUALITY
+# =============================================================================
+black>=24.0.0                # Code formatting
+flake8>=7.0.0                # Linting
+mypy>=1.8.0                  # Type checking
+pylint>=3.0.0                # Static analysis
+bandit>=1.7.0                # Security linting
+safety>=2.3.0                # Dependency vulnerability scanning
+
+# =============================================================================
+# COVERAGE
+# =============================================================================
+coverage>=7.4.0              # Code coverage
+pytest-cov>=4.1.0            # pytest coverage integration
+coverage-badge>=1.1.0        # Coverage badges
+
+# =============================================================================
+# REPORTING
+# =============================================================================
+allure-pytest>=2.13.0        # Allure test reports
+pytest-json-report>=1.5.0    # JSON test reports
+pytest-metadata>=3.1.0       # Test metadata
+
+# =============================================================================
+# DEBUGGING
+# =============================================================================
+pytest-pdb>=0.3.0            # Enhanced PDB debugging
+pytest-sugar>=1.0.0          # Better test output formatting
+pytest-clarity>=1.0.0        # Enhanced assertion output
+
+# =============================================================================
+# ASYNC TESTING
+# =============================================================================
+asynctest>=0.13.0            # Async test utilities
+pytest-aiohttp>=1.0.0        # aiohttp testing
+anyio>=4.2.0                 # Async I/O abstraction
+
+# =============================================================================
+# TEST DATA
+# =============================================================================
+jsonschema>=4.21.0           # JSON schema validation
+Pillow>=10.2.0               # Image processing for scan tests
+numpy>=1.26.0                # Numerical operations for measurements
+
+# =============================================================================
+# LOAD TESTING (Optional)
+# =============================================================================
+# k6 (installed separately via npm/choco)
+# artillery (npm install -g artillery)
