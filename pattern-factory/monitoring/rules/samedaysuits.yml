@@ -1,0 +1,180 @@
+# SameDaySuits Pattern Factory - Prometheus Alert Rules
+
+groups:
+  - name: samedaysuits-production
+    interval: 30s
+    rules:
+      # =========================================================================
+      # Queue Alerts
+      # =========================================================================
+      
+      - alert: HighQueueDepth
+        expr: sds_queue_length{priority="normal"} > 50
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High queue depth detected"
+          description: "Order queue has {{ $value }} pending orders for over 5 minutes. Consider scaling workers."
+      
+      - alert: CriticalQueueDepth
+        expr: sds_queue_length{priority="normal"} > 100
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Critical queue depth - orders backing up"
+          description: "Order queue has {{ $value }} pending orders. Immediate action required."
+      
+      - alert: DeadLetterQueueGrowing
+        expr: increase(sds_dlq_size[15m]) > 5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Dead letter queue growing"
+          description: "DLQ has grown by {{ $value }} in the last 15 minutes. Check failed orders."
+      
+      - alert: DeadLetterQueueCritical
+        expr: sds_dlq_size > 20
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Dead letter queue critical"
+          description: "DLQ has {{ $value }} failed orders. Manual intervention required."
+      
+      # =========================================================================
+      # Worker Alerts
+      # =========================================================================
+      
+      - alert: NoActiveWorkers
+        expr: sds_active_workers == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "No active workers"
+          description: "No nesting workers are active. Orders will not be processed."
+      
+      - alert: LowWorkerCount
+        expr: sds_active_workers < 2 and sds_queue_length > 10
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Low worker count with queue backlog"
+          description: "Only {{ $value }} workers active with queue backlog. Consider scaling."
+      
+      # =========================================================================
+      # Processing Alerts
+      # =========================================================================
+      
+      - alert: HighOrderProcessingTime
+        expr: histogram_quantile(0.95, rate(sds_order_processing_seconds_bucket[5m])) > 120
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High order processing time"
+          description: "95th percentile processing time is {{ $value }}s. Performance degraded."
+      
+      - alert: HighErrorRate
+        expr: rate(sds_orders_total{status="failed"}[5m]) / rate(sds_orders_total[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High order error rate"
+          description: "Order error rate is {{ $value | humanizePercentage }}. Investigate failures."
+      
+      - alert: CriticalErrorRate
+        expr: rate(sds_orders_total{status="failed"}[5m]) / rate(sds_orders_total[5m]) > 0.25
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Critical order error rate"
+          description: "Order error rate is {{ $value | humanizePercentage }}. System may be failing."
+      
+      # =========================================================================
+      # API Alerts
+      # =========================================================================
+      
+      - alert: APIDown
+        expr: up{job="samedaysuits-api"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "SameDaySuits API is down"
+          description: "API is not responding to health checks."
+      
+      - alert: HighAPILatency
+        expr: histogram_quantile(0.95, rate(sds_http_request_duration_seconds_bucket[5m])) > 5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High API latency"
+          description: "95th percentile API latency is {{ $value }}s."
+      
+      # =========================================================================
+      # Redis Alerts
+      # =========================================================================
+      
+      - alert: RedisDown
+        expr: redis_up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Redis is down"
+          description: "Redis server is not responding. Queue operations will fail."
+      
+      - alert: RedisHighMemory
+        expr: redis_memory_used_bytes / redis_memory_max_bytes > 0.85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Redis memory usage high"
+          description: "Redis memory usage is {{ $value | humanizePercentage }}."
+      
+      # =========================================================================
+      # Circuit Breaker Alerts
+      # =========================================================================
+      
+      - alert: CircuitBreakerOpen
+        expr: sds_circuit_breaker_state{state="open"} == 1
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Circuit breaker open"
+          description: "Circuit breaker {{ $labels.name }} is open. Database operations failing."
+
+  - name: samedaysuits-sla
+    interval: 1m
+    rules:
+      # =========================================================================
+      # SLA Monitoring
+      # =========================================================================
+      
+      - alert: SLABreach
+        expr: histogram_quantile(0.99, rate(sds_order_processing_seconds_bucket[1h])) > 300
+        for: 10m
+        labels:
+          severity: critical
+        annotations:
+          summary: "SLA breach risk"
+          description: "99th percentile processing time exceeds 5 minutes. SLA at risk."
+      
+      - alert: LowThroughput
+        expr: rate(sds_orders_total{status="completed"}[1h]) < 10
+        for: 30m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Low order throughput"
+          description: "Processing fewer than 10 orders per hour. Check system health."

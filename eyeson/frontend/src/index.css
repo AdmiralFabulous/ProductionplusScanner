@@ -1,0 +1,129 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    @apply h-full;
+  }
+  
+  body {
+    @apply h-full overflow-hidden;
+  }
+  
+  #root {
+    @apply h-full;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-primary-600 hover:bg-primary-700 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-200 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  
+  .btn-secondary {
+    @apply bg-eyeson-surface hover:bg-slate-700 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-200 active:scale-95 border border-slate-600;
+  }
+  
+  .card {
+    @apply bg-eyeson-surface rounded-xl p-6 border border-slate-700 shadow-lg;
+  }
+  
+  .input {
+    @apply bg-slate-800 border border-slate-600 rounded-lg px-4 py-3 text-white placeholder-slate-400 focus:outline-none focus:border-primary-500 transition-colors;
+  }
+  
+  .progress-ring {
+    @apply relative;
+  }
+  
+  .progress-ring__circle {
+    @apply transition-all duration-300;
+    transform: rotate(-90deg);
+    transform-origin: 50% 50%;
+  }
+}
+
+@layer utilities {
+  .safe-area-top {
+    padding-top: env(safe-area-inset-top);
+  }
+  
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  
+  .camera-view {
+    @apply object-cover w-full h-full;
+    transform: scaleX(-1); /* Mirror front camera */
+  }
+  
+  .skeleton-overlay {
+    @apply absolute inset-0 pointer-events-none;
+    mix-blend-mode: screen;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1e293b;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #475569;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
+}
+
+/* Range slider styling */
+input[type="range"] {
+  @apply w-full h-2 bg-slate-700 rounded-lg appearance-none cursor-pointer;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  @apply w-4 h-4 bg-primary-500 rounded-full appearance-none;
+}
+
+/* Video element styling */
+video {
+  @apply w-full h-full object-cover;
+}
+
+/* Canvas for MediaPipe */
+canvas {
+  @apply absolute inset-0 w-full h-full pointer-events-none;
+}
+
+/* Loading spinner */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+/* Voice waveform animation */
+@keyframes waveform {
+  0%, 100% { height: 10%; }
+  50% { height: 100%; }
+}
+
+.waveform-bar {
+  animation: waveform 1s ease-in-out infinite;
+}
+
+.waveform-bar:nth-child(2) { animation-delay: 0.1s; }
+.waveform-bar:nth-child(3) { animation-delay: 0.2s; }
+.waveform-bar:nth-child(4) { animation-delay: 0.3s; }
+.waveform-bar:nth-child(5) { animation-delay: 0.4s; }

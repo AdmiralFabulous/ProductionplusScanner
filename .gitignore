@@ -1,0 +1,215 @@
+# PRODUCTION-SCANNER Git Ignore
+# Reference: SUIT_AI_Master_Operations_Manual_v6_7_1.md Section 2.5
+
+# ─────────────────────────────────────────────────────────────────
+# ENVIRONMENT & SECRETS (NEVER COMMIT)
+# ─────────────────────────────────────────────────────────────────
+
+.env
+.env.local
+.env.*.local
+!.env.example
+secrets/
+secrets.json
+secrets.yaml
+*.pem
+*.key
+*.crt
+
+# ─────────────────────────────────────────────────────────────────
+# PYTHON
+# ─────────────────────────────────────────────────────────────────
+
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Virtual environments
+venv/
+ENV/
+env/
+.venv/
+
+# ─────────────────────────────────────────────────────────────────
+# NODE / REACT
+# ─────────────────────────────────────────────────────────────────
+
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+dist/
+dist-ssr/
+*.local
+
+# ─────────────────────────────────────────────────────────────────
+# IDE & EDITORS
+# ─────────────────────────────────────────────────────────────────
+
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+*.sublime-project
+*.sublime-workspace
+.project
+.classpath
+.settings/
+
+# ─────────────────────────────────────────────────────────────────
+# LOGS & DATA
+# ─────────────────────────────────────────────────────────────────
+
+logs/
+*.log
+*.log.*
+log/
+data/
+database/
+cache/
+*.db
+*.sqlite
+*.sqlite3
+
+# ─────────────────────────────────────────────────────────────────
+# TESTING & COVERAGE
+# ─────────────────────────────────────────────────────────────────
+
+.coverage
+.pytest_cache/
+htmlcov/
+.tox/
+.nox/
+coverage.xml
+*.cover
+.hypothesis/
+
+# ─────────────────────────────────────────────────────────────────
+# DOCKER
+# ─────────────────────────────────────────────────────────────────
+
+.dockerignore
+docker-compose.override.yml
+
+# ─────────────────────────────────────────────────────────────────
+# MODELS & LARGE FILES
+# ─────────────────────────────────────────────────────────────────
+
+*.onnx
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+models/*/checkpoints/
+models/*/weights/
+*.h5
+*.pb
+*.tflite
+*.mlmodel
+
+# TTS Model cache (large files)
+**/tts_cache/
+**/tts_models/
+**/.cache/tts/
+
+# ─────────────────────────────────────────────────────────────────
+# PATTERN FACTORY SPECIFIC
+# ─────────────────────────────────────────────────────────────────
+
+# Output files
+*.plt
+*.hpgl
+*.hpg
+*.dxf
+*.pds
+*.pdf
+output/
+plots/
+patterns/
+
+# Cutter data
+cutter_data/
+*.cut
+
+# Nesting output
+nestings/
+*.nest
+
+# ─────────────────────────────────────────────────────────────────
+# EYESON SPECIFIC
+# ─────────────────────────────────────────────────────────────────
+
+# Uploaded scans
+uploads/
+scans/
+videos/
+images/
+*.mp4
+*.mov
+*.avi
+
+# Processed data
+processed/
+landmarks/
+*.ply
+*.obj
+*.stl
+
+# ─────────────────────────────────────────────────────────────────
+# TEMPORARY FILES
+# ─────────────────────────────────────────────────────────────────
+
+tmp/
+temp/
+.tmp/
+*.tmp
+*.bak
+*.backup
+*.old
+*.orig
+
+# ─────────────────────────────────────────────────────────────────
+# OS SPECIFIC
+# ─────────────────────────────────────────────────────────────────
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Linux
+*~
+.nfs*
+
+# Reserved Windows filename
+nul

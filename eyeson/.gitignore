@@ -1,0 +1,144 @@
+# EYESON - Git Ignore File
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environments
+venv/
+env/
+ENV/
+.venv
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Environment Variables
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+
+# Database
+*.sqlite
+*.sqlite3
+*.db
+
+# Logs
+*.log
+logs/
+
+# Cache
+cache/
+.pytest_cache/
+.mypy_cache/
+.dmypy.json
+.dmypy.json
+
+# Model Files (large binaries)
+*.onnx
+*.pth
+*.pt
+*.h5
+*.pb
+*.ckpt
+models/*.bin
+models/*.safetensors
+
+# Allow small model configs
+!models/.gitkeep
+!models/*.json
+
+# Audio Cache
+cache/tts/*.wav
+cache/tts/*.mp3
+
+# Video Uploads (temporary)
+uploads/
+temp/
+tmp/
+
+# Kubernetes Secrets
+infrastructure/k8s/*-secret.yaml
+infrastructure/k8s/secrets/
+*.key
+*.pem
+*.crt
+
+# Terraform
+infrastructure/terraform/.terraform/
+infrastructure/terraform/*.tfstate
+infrastructure/terraform/*.tfstate.*
+infrastructure/terraform/*.tfvars
+infrastructure/terraform/*.tfvars.json
+infrastructure/terraform/.terraform.lock.hcl
+
+# Node.js (Frontend)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+*.local
+
+# Build Outputs
+frontend/dist/
+frontend/build/
+*.tsbuildinfo
+
+# ML Service Artifacts
+ml-service/models/checkpoints/
+ml-service/models/cache/
+ml-service/output/
+ml-service/__pycache__/
+
+# Docker
+.dockerignore
+Dockerfile.local
+docker-compose.override.yml
+
+# Documentation Build
+docs/_build/
+docs/_static/
+docs/_templates/
+
+# Misc
+*.bak
+*.tmp
+*.temp
+Thumbs.db

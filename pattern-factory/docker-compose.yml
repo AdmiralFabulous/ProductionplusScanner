@@ -1,0 +1,186 @@
+version: '3.8'
+
+# SameDaySuits Pattern Factory - Docker Compose Configuration
+# For on-premise deployment with HTTPS support
+#
+# Scalability Architecture:
+#   - Redis: Queue and caching backend
+#   - API: Fast validation + enqueue (~50ms response)
+#   - Workers: Scalable order processors (--scale nesting-worker=N)
+#
+# Usage:
+#   docker-compose up -d                          # Start all services
+#   docker-compose up -d --scale nesting-worker=3 # Start with 3 workers
+#   docker-compose logs -f nesting-worker         # Watch worker logs
+
+services:
+  # =========================================================================
+  # Redis - Queue and Cache Backend
+  # =========================================================================
+  redis:
+    image: redis:7-alpine
+    container_name: samedaysuits-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - samedaysuits-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+  # =========================================================================
+  # Main API Service
+  # =========================================================================
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: samedaysuits-api
+    restart: unless-stopped
+    environment:
+      # Security (override in .env file)
+      - JWT_SECRET=${JWT_SECRET}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+      - API_KEY=${API_KEY:-}
+      - AUTH_ENABLED=${AUTH_ENABLED:-true}
+      - ENCRYPTION_ENABLED=${ENCRYPTION_ENABLED:-true}
+      - AUDIT_ENABLED=${AUDIT_ENABLED:-true}
+      
+      # Scalability
+      - REDIS_URL=redis://redis:6379/0
+      - ASYNC_PROCESSING=${ASYNC_PROCESSING:-false}
+      
+      # Database
+      - SUPABASE_URL=${SUPABASE_URL:-http://localhost:54321}
+      - SUPABASE_KEY=${SUPABASE_KEY}
+      - SUPABASE_SERVICE_KEY=${SUPABASE_SERVICE_KEY:-}
+      
+      # CORS
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-https://localhost,http://localhost:3000}
+      
+      # Logging
+      - AUDIT_LOG_PATH=/app/logs/audit.log
+      - PYTHONUNBUFFERED=1
+    
+    volumes:
+      # Persist output files
+      - ./output:/app/output
+      # Persist logs
+      - ./logs:/app/logs
+      # Templates (read-only)
+      - ./DS-speciale:/app/DS-speciale:ro
+    
+    ports:
+      - "8000:8000"
+    
+    depends_on:
+      redis:
+        condition: service_healthy
+    
+    networks:
+      - samedaysuits-network
+    
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # NGINX Reverse Proxy for HTTPS
+  nginx:
+    image: nginx:alpine
+    container_name: samedaysuits-nginx
+    restart: unless-stopped
+    ports:
+      - "443:443"
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./certs:/etc/nginx/certs:ro
+    depends_on:
+      - api
+    networks:
+      - samedaysuits-network
+    healthcheck:
+      test: ["CMD", "nginx", "-t"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # =========================================================================
+  # Nesting Worker - Scalable Order Processor
+  # =========================================================================
+  # Scale with: docker-compose up -d --scale nesting-worker=3
+  nesting-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    command: python -m src.workers.nesting_worker
+    environment:
+      # Redis connection
+      - REDIS_URL=redis://redis:6379/0
+      
+      # Worker identification (auto-generated if not set)
+      # - WORKER_ID=worker-1
+      
+      # Database (for logging/monitoring)
+      - SUPABASE_URL=${SUPABASE_URL:-http://localhost:54321}
+      - SUPABASE_KEY=${SUPABASE_KEY}
+      
+      # Logging
+      - PYTHONUNBUFFERED=1
+    
+    volumes:
+      # Persist output files (shared with API)
+      - ./output:/app/output
+      # Templates (read-only)
+      - ./DS-speciale:/app/DS-speciale:ro
+      # Logs
+      - ./logs:/app/logs
+    
+    depends_on:
+      redis:
+        condition: service_healthy
+    
+    networks:
+      - samedaysuits-network
+    
+    # Resource limits (optional)
+    # deploy:
+    #   resources:
+    #     limits:
+    #       cpus: '2'
+    #       memory: 1G
+
+  # Optional: Local Supabase for development
+  # Uncomment for fully local development without cloud Supabase
+  # supabase-db:
+  #   image: supabase/postgres:15.1.0.117
+  #   container_name: samedaysuits-postgres
+  #   restart: unless-stopped
+  #   environment:
+  #     - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
+  #     - POSTGRES_DB=postgres
+  #   volumes:
+  #     - postgres-data:/var/lib/postgresql/data
+  #   ports:
+  #     - "54322:5432"
+  #   networks:
+  #     - samedaysuits-network
+
+networks:
+  samedaysuits-network:
+    driver: bridge
+
+volumes:
+  redis-data:
+  # postgres-data:

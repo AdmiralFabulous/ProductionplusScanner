@@ -1,0 +1,303 @@
+# PRODUCTION-SCANNER - Full Stack Docker Compose
+# EYESON Scanner + Pattern Factory Integration
+# Version: 1.0
+# Reference: SUIT_AI_Master_Operations_Manual_v6_7_1.md
+
+version: '3.8'
+
+services:
+  # ─────────────────────────────────────────────────────────────────
+  # INFRASTRUCTURE
+  # ─────────────────────────────────────────────────────────────────
+  
+  redis:
+    image: redis:7-alpine
+    container_name: scanner-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: scanner-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER:-samedaysuits}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-changeme}
+      POSTGRES_DB: ${DB_NAME:-samedaysuits}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-samedaysuits}"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  # ─────────────────────────────────────────────────────────────────
+  # PATTERN FACTORY (Port 8000)
+  # ─────────────────────────────────────────────────────────────────
+  
+  pattern-factory:
+    build:
+      context: ./pattern-factory
+      dockerfile: Dockerfile
+    container_name: scanner-pattern-factory
+    restart: unless-stopped
+    environment:
+      # Database
+      DATABASE_URL: postgresql://${DB_USER:-samedaysuits}:${DB_PASSWORD:-changeme}@postgres:5432/${DB_NAME:-samedaysuits}
+      
+      # Redis
+      REDIS_URL: redis://redis:6379/0
+      
+      # JWT Secrets (generate with: openssl rand -hex 32)
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-your-jwt-secret-minimum-32-characters-long}
+      JWT_REFRESH_SECRET_KEY: ${JWT_REFRESH_SECRET_KEY:-your-refresh-secret-different-from-above}
+      
+      # Cutter Configuration
+      CUTTER_IP: ${CUTTER_IP:-192.168.1.100}
+      CUTTER_PORT: ${CUTTER_PORT:-9100}
+      CUTTER_AUTO_SUBMIT: ${CUTTER_AUTO_SUBMIT:-true}
+      
+      # Fabric Settings
+      FABRIC_WIDTH_INCHES: ${FABRIC_WIDTH_INCHES:-62}
+      
+      # API Settings
+      API_PORT: 8000
+      API_HOST: 0.0.0.0
+      DEBUG: ${DEBUG:-false}
+      
+      # Logging
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      LOG_FORMAT: json
+    ports:
+      - "8000:8000"
+    volumes:
+      - pattern-factory-data:/app/data
+      - pattern-factory-logs:/app/logs
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  nesting-worker:
+    build:
+      context: ./pattern-factory
+      dockerfile: Dockerfile.worker
+    container_name: scanner-nesting-worker
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://${DB_USER:-samedaysuits}:${DB_PASSWORD:-changeme}@postgres:5432/${DB_NAME:-samedaysuits}
+      REDIS_URL: redis://redis:6379/0
+      WORKER_TYPE: nesting
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    volumes:
+      - pattern-factory-data:/app/data
+    depends_on:
+      - redis
+      - postgres
+      - pattern-factory
+    deploy:
+      replicas: ${NESTING_WORKERS:-2}
+
+  cutter-worker:
+    build:
+      context: ./pattern-factory
+      dockerfile: Dockerfile.worker
+    container_name: scanner-cutter-worker
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://${DB_USER:-samedaysuits}:${DB_PASSWORD:-changeme}@postgres:5432/${DB_NAME:-samedaysuits}
+      REDIS_URL: redis://redis:6379/0
+      WORKER_TYPE: cutter
+      CUTTER_IP: ${CUTTER_IP:-192.168.1.100}
+      CUTTER_PORT: ${CUTTER_PORT:-9100}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    volumes:
+      - pattern-factory-data:/app/data
+    depends_on:
+      - redis
+      - postgres
+      - pattern-factory
+
+  # ─────────────────────────────────────────────────────────────────
+  # EYESON BACKEND (Port 8001)
+  # ─────────────────────────────────────────────────────────────────
+  
+  eyeson-backend:
+    build:
+      context: ./eyeson/backend
+      dockerfile: Dockerfile
+    container_name: scanner-eyeson-backend
+    restart: unless-stopped
+    environment:
+      # API Settings
+      API_PORT: 8001
+      API_HOST: 0.0.0.0
+      DEBUG: ${DEBUG:-false}
+      
+      # Pattern Factory Integration
+      PATTERN_FACTORY_URL: http://pattern-factory:8000
+      PATTERN_FACTORY_API_KEY: ${PATTERN_FACTORY_API_KEY:-}
+      
+      # TTS Configuration
+      TTS_MODEL: ${TTS_MODEL:-kokoro-82m}
+      TTS_FALLBACK: ${TTS_FALLBACK:-piper}
+      TTS_CACHE_DIR: /app/cache/tts
+      
+      # Infrastructure
+      REDIS_URL: redis://redis:6379/1
+      DATABASE_URL: postgresql://${DB_USER:-samedaysuits}:${DB_PASSWORD:-changeme}@postgres:5432/${DB_NAME:-samedaysuits}
+      
+      # JWT (shared with Pattern Factory)
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-your-jwt-secret-minimum-32-characters-long}
+      
+      # ML Service (if external)
+      ML_SERVICE_URL: ${ML_SERVICE_URL:-http://localhost:8002}
+      
+      # Logging
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    ports:
+      - "8001:8001"
+    volumes:
+      - eyeson-backend-data:/app/data
+      - eyeson-tts-cache:/app/cache/tts
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      pattern-factory:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # ─────────────────────────────────────────────────────────────────
+  # EYESON FRONTEND (Port 5173 - Development)
+  # ─────────────────────────────────────────────────────────────────
+  
+  eyeson-frontend:
+    build:
+      context: ./eyeson/frontend
+      dockerfile: Dockerfile
+    container_name: scanner-eyeson-frontend
+    restart: unless-stopped
+    environment:
+      # API Endpoints
+      VITE_API_URL: http://localhost:8001
+      VITE_PATTERN_FACTORY_URL: http://localhost:8000
+      
+      # Feature Flags
+      VITE_ENABLE_VOICE: ${ENABLE_VOICE:-true}
+      VITE_ENABLE_DEBUG: ${DEBUG:-false}
+    ports:
+      - "5173:5173"
+    depends_on:
+      - eyeson-backend
+      - pattern-factory
+
+  # ─────────────────────────────────────────────────────────────────
+  # OPTIONAL: NGINX REVERSE PROXY (Production)
+  # ─────────────────────────────────────────────────────────────────
+  
+  nginx:
+    image: nginx:alpine
+    container_name: scanner-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - eyeson-frontend
+      - eyeson-backend
+      - pattern-factory
+    profiles:
+      - production
+
+  # ─────────────────────────────────────────────────────────────────
+  # OPTIONAL: MONITORING
+  # ─────────────────────────────────────────────────────────────────
+  
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: scanner-prometheus
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    profiles:
+      - monitoring
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: scanner-grafana
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./monitoring/grafana:/etc/grafana/provisioning:ro
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-admin}
+    profiles:
+      - monitoring
+
+# ─────────────────────────────────────────────────────────────────
+# VOLUMES
+# ─────────────────────────────────────────────────────────────────
+
+volumes:
+  redis-data:
+    driver: local
+  postgres-data:
+    driver: local
+  pattern-factory-data:
+    driver: local
+  pattern-factory-logs:
+    driver: local
+  eyeson-backend-data:
+    driver: local
+  eyeson-tts-cache:
+    driver: local
+  prometheus-data:
+    driver: local
+  grafana-data:
+    driver: local
+
+# ─────────────────────────────────────────────────────────────────
+# NETWORKS
+# ─────────────────────────────────────────────────────────────────
+
+networks:
+  default:
+    name: scanner-network
+    driver: bridge

@@ -1,0 +1,35 @@
+[
+  {
+    "order_id": "ORD-BATCH-001",
+    "customer_id": "CUST-A",
+    "garment_type": "tee",
+    "fit_type": "regular",
+    "measurements": {
+      "chest": 100,
+      "waist": 85,
+      "hip": 98
+    }
+  },
+  {
+    "order_id": "ORD-BATCH-002",
+    "customer_id": "CUST-B",
+    "garment_type": "trousers",
+    "fit_type": "slim",
+    "measurements": {
+      "chest": 105,
+      "waist": 90,
+      "hip": 102
+    }
+  },
+  {
+    "order_id": "ORD-BATCH-003",
+    "customer_id": "CUST-C",
+    "garment_type": "jacket",
+    "fit_type": "classic",
+    "measurements": {
+      "chest": 110,
+      "waist": 95,
+      "hip": 105
+    }
+  }
+]

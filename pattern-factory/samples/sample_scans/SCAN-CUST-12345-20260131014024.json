@@ -1,0 +1,25 @@
+{
+  "scan_id": "SCAN-CUST-12345-20260131014024",
+  "customer_id": "CUST-12345",
+  "timestamp": "2026-01-31T01:40:24.827160",
+  "measurements": {
+    "chest_cm": 102.0,
+    "waist_cm": 88.0,
+    "hip_cm": 100.0,
+    "shoulder_width_cm": 46.36363636363636,
+    "neck_cm": 40.8,
+    "arm_length_cm": 65.0,
+    "inseam_cm": 78.0,
+    "torso_length_cm": 70.0
+  },
+  "confidence": 0.95,
+  "posture": {
+    "shoulder_slope": "normal",
+    "shoulder_slope_degrees": 0,
+    "back_arch": "normal",
+    "posture_score": 0.92
+  },
+  "notes": [
+    "Sample scan for testing"
+  ]
+}
